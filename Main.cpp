@@ -10,10 +10,7 @@ double **make_arr(size_t size, int lt = 10, int rt = 20, int lb = 20, int rb = 3
 	arr = new double *[size];
 
 	for (size_t i = 0; i < size; i++)
-	{
-		arr[i] = new double[size];
-		memset(arr[i], 0, size * sizeof(double));
-	}
+		arr[i] = new double[size];		
 
 	//Установка значений в углах сетки
 	arr[0][0] = lt;
@@ -23,11 +20,16 @@ double **make_arr(size_t size, int lt = 10, int rt = 20, int lb = 20, int rb = 3
 
 #pragma acc data copy(arr[0:size][0:size])
 {
-//Расчёт шага для каждой стороны сетки
-double step1 = (arr[0][size - 1] - arr[0][0]) / (size - 1);
-double step2 = (arr[size - 1][size - 1] - arr[0][size - 1]) / (size - 1);
-double step3 =  (arr[size - 1][size - 1] - arr[size - 1][0]) / (size - 1);
-double step4 = (arr[size - 1][0] - arr[0][0]) / (size - 1);
+#pragma acc parallel loop collapse(2) independent	
+	for (size_t i = 1; i < size - 1; i++)
+		for (size_t j = 1; j < size - 1; j++)
+			arr[i][j] = 0;
+
+	//Расчёт шага для каждой стороны сетки
+	double step1 = (arr[0][size - 1] - arr[0][0]) / (size - 1);
+	double step2 = (arr[size - 1][size - 1] - arr[0][size - 1]) / (size - 1);
+	double step3 =  (arr[size - 1][size - 1] - arr[size - 1][0]) / (size - 1);
+	double step4 = (arr[size - 1][0] - arr[0][0]) / (size - 1);
 
 #pragma acc parallel loop independent
 	for (size_t i = 1; i < size - 1; i++) //Заполнение сторон сетки с помощью линейной интерполяции между углами области
